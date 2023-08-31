@@ -1,0 +1,39 @@
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "tomli"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tmcomposite"
+description = "TMComposite"
+dynamic = ["version"]
+readme = "README.md"
+license.text = "MIT License"
+requires-python = ">=3.10"
+
+# Author details
+authors = [
+    { name = "Ole-Christoffer Granmo", email = "ole.granmo@uia.no" },
+    { name = "Per-Arne Andersen", email = "per.andersen@uia.no" }
+]
+
+# Dependencies
+dependencies = [
+    "tmu",
+    "tensorflow",
+    "numpy",
+    "opencv-python-headless",
+    "pydantic",
+    "tqdm"   
+]
+
+# Additional files & URLs
+[project.urls]
+homepage = "https://github.com/cair/tmu/"
+repository = "https://github.com/cair/tmu/"
+
+[tool.setuptools.package-dir]
+tmcomposite = "tmcomposite"

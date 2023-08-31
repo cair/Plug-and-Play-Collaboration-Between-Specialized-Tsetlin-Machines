@@ -27,6 +27,12 @@ if __name__ == "__main__":
     Y_train=Y_train.reshape(Y_train.shape[0])
     Y_test=Y_test.reshape(Y_test.shape[0])
 
+
+    X_train = X_train[:100]
+    Y_train = Y_train[:100]
+    X_test = X_test[:100]
+    Y_test = Y_test[:100]
+
     for i in range(X_train.shape[0]):
             for j in range(X_train.shape[3]):
                     X_train[i,:,:,j] = cv2.adaptiveThreshold(X_train_org[i,:,:,j], 1, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
@@ -42,7 +48,7 @@ if __name__ == "__main__":
         max_included_literals=args.max_included_literals,
         platform=args.device,
         weighted_clauses=args.weighted_clauses,
-        type_i_ii_ratio=args.type_i_ii_ratio,
+        #type_i_ii_ratio=args.type_i_ii_ratio,
         patch_dim=(args.patch_size, args.patch_size)
     )
 
