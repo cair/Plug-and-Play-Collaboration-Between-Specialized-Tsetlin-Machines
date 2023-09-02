@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field
+from typing import Union
 
 class TMBaseConfig(BaseModel):
     pass
@@ -10,4 +11,4 @@ class TMClassifierConfig(TMBaseConfig):
     max_included_literals: int = Field(32, description="Max Included Literals")
     platform: str = Field("GPU", description="Device to use")
     weighted_clauses: bool = Field(True, description="Use Weighted Clauses or not")
-    patch_dim: tuple | None = Field(None, description="Size of Patch")
+    patch_dim: Union[tuple, None] = Field(None, description="Size of Patch")

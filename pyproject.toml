@@ -22,12 +22,14 @@ authors = [
 
 # Dependencies
 dependencies = [
-    "tmu",
+    "tmu@git+https://github.com/cair/tmu",
     "tensorflow",
     "numpy",
     "opencv-python-headless",
     "pydantic",
-    "tqdm"   
+    "tqdm",
+    "optuna",
+    "joblib"
 ]
 
 # Additional files & URLs

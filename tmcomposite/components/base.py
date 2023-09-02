@@ -1,4 +1,8 @@
 import abc
+import pickle
+from pathlib import Path
+from typing import Union
+
 
 class TMComponent(abc.ABC):
 
@@ -26,7 +30,6 @@ class TMComponent(abc.ABC):
         if not isinstance(self, TMComponent):
             raise TypeError(f"{type(self).__name__} does not inherit from TMComponent")
 
-
         return data
 
     def fit(self, data: dict) -> None:
@@ -36,4 +39,15 @@ class TMComponent(abc.ABC):
     def predict(self, data: dict):
         pass
 
- 
+    def save(self, path: Union[Path, str], format="pkl") -> None:
+        path = Path(path) if isinstance(path, str) else path
+
+        if format == "pkl":
+            import pickle
+            with open(path, "wb") as f:
+                pickle.dump(self, f)
+
+
+    def __str__(self):
+        params = '-'.join([f"{k}={v}" for k, v in self.model_config.dict().items()])
+        return f"{type(self).__name__}-{self.model_cls.__name__}-{params})"
