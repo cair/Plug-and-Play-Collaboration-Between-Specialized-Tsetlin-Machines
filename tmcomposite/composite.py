@@ -72,8 +72,9 @@ class TMComposite:
                                                ((idx, component, data_preprocessed[idx], callback_proxy) for idx, component in
                                                 enumerate(self.components)))
 
-                callback_queue.put('DONE')  # Send done signal to listener
-                listener_thread.join()  # Wait for listener to process all logs
+                if callbacks:
+                    callback_queue.put('DONE')  # Send done signal to listener
+                    listener_thread.join()  # Wait for listener to process all logs
 
 
         else:

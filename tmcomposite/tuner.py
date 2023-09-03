@@ -8,6 +8,7 @@ from tmcomposite.components.color_thermometer_scoring import ColorThermometerCom
 from tmcomposite.components.histogram_of_gradients import HistogramOfGradientsComponent
 from tmcomposite.composite import TMComposite
 from tmcomposite.config import TMClassifierConfig
+import numpy as np
 
 
 class TMCompositeTuner:
@@ -43,7 +44,7 @@ class TMCompositeTuner:
                                                         'ColorThermometerComponent',
                                                         'HistogramOfGradientsComponent'])
 
-            epochs = trial.suggest_int(f'epochs_{i}', 1, 500)
+            epochs = trial.suggest_int(f'epochs_{i}', 1, 100)
 
             config = TMClassifierConfig(
                 num_clauses=num_clauses,
@@ -77,7 +78,7 @@ class TMCompositeTuner:
         )
 
         preds = composite_model.predict(data=self.data_test)
-        accuracy = (preds['some_key'] == self.data_test['Y'].flatten()).mean()
+        accuracy = (preds['composite'] == self.data_test['Y'].flatten()).mean()
 
         # Adjust number of components for next trial
         if accuracy > self.last_accuracy:
@@ -86,16 +87,21 @@ class TMCompositeTuner:
             self.n_components = max(1, self.n_components - 1)
 
         self.last_accuracy = accuracy
-        return -accuracy  # Since we are maximizing
+        return accuracy
 
-    def save_best_params(self, study, filename="best_params.json"):
+    def save_best_params(self, study, trial, filename="best_params.json"):
+        best_data = {
+            'params': study.best_params,
+            'value': trial.value
+        }
         with open(filename, "w") as f:
-            json.dump(study.best_params, f)
+            json.dump(best_data, f)
 
     def gradual_saving_callback(self, study, trial):
-        # Whenever a new best value is found, it saves the parameters
-        if trial.value == study.best_value:
-            self.save_best_params(study, filename=f"best_params_trial_{trial.number}.json")
+        # Use np.isclose to handle potential floating-point precision issues
+        if np.isclose(trial.value, study.best_value, atol=1e-10):
+            self.save_best_params(study, trial, filename=f"best_params_trial_{trial.number}.json")
+
 
     def tune(self, n_trials: int = 100):
         storage_path = 'sqlite:///optuna_tuning.db'
