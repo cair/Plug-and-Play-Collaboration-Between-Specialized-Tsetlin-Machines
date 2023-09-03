@@ -1,5 +1,5 @@
 import json
-
+import time
 import optuna
 from joblib import Parallel, delayed
 from tmu.models.classification.vanilla_classifier import TMClassifier
@@ -102,18 +102,28 @@ class TMCompositeTuner:
         if np.isclose(trial.value, study.best_value, atol=1e-10):
             self.save_best_params(study, trial, filename=f"best_params_trial_{trial.number}.json")
 
+    def retry_optimize(self, study, objective, n_trials, callbacks, max_retries=5, wait_time=2.0):
+        for _ in range(max_retries):
+            try:
+                study.optimize(objective, n_trials=n_trials, callbacks=callbacks)
+                return
+            except Exception as e:
+                if "database is locked" in str(e).lower():
+                    time.sleep(wait_time)
+                else:
+                    raise e
+        raise RuntimeError("Max retries reached for database access")
 
     def tune(self, n_trials: int = 100):
         storage_path = 'sqlite:///optuna_tuning.db'
         with Parallel(n_jobs=self.n_jobs) as parallel:
             if self.n_jobs == 1:
                 study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(), storage=storage_path, load_if_exists=True)
-                study.optimize(self.objective, n_trials=n_trials, callbacks=[self.gradual_saving_callback])
+                self.retry_optimize(study, self.objective, n_trials, [self.gradual_saving_callback])
             else:
-                # For distributed optimization
                 study = optuna.create_study(study_name=self.study_name, direction='maximize', storage=storage_path, load_if_exists=True, pruner=optuna.pruners.MedianPruner())
                 parallel(
-                    delayed(study.optimize)(self.objective, n_trials=n_trials // self.n_jobs, callbacks=[self.gradual_saving_callback])
+                    delayed(self.retry_optimize)(study, self.objective, n_trials // self.n_jobs, [self.gradual_saving_callback])
                     for i in range(self.n_jobs)
                 )
 
