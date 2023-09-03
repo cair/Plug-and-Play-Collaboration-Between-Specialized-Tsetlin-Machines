@@ -10,15 +10,26 @@ from tqdm import tqdm
 
 from tmcomposite.callbacks.base import TMCompositeCallbackProxy
 from tmcomposite.components.base import TMComponent
+from tmcomposite.gating.base import BaseGate
+from tmcomposite.gating.linear_gate import LinearGate
 
 
 class TMComposite:
 
-    def __init__(self, components: Optional[list[TMComponent]] = None,
-                 use_multiprocessing: bool = False) -> None:
+    def __init__(
+            self, 
+            components: Optional[list[TMComponent]] = None,
+            gate_function: Optional[Type[BaseGate]] = None,
+            gate_function_params: Optional[dict] = None,
+            use_multiprocessing: bool = False
+    ) -> None:
         self.components: List[TMComponent] = components or []
-
         self.use_multiprocessing = use_multiprocessing
+
+        if gate_function_params is None:
+            gate_function_params = dict()
+
+        self.gate_function_instance = gate_function(self, **gate_function_params) if gate_function else LinearGate(self, **gate_function_params)
 
     def _listener(self, queue, callbacks):
         while True:
@@ -78,7 +89,6 @@ class TMComposite:
 
 
         else:
-
             data_preprocessed = [component.preprocess(data) for component in self.components]
             epochs_left = [component.epochs for component in self.components]
             pbars = [tqdm(total=component.epochs) for component in self.components]
@@ -117,28 +127,43 @@ class TMComposite:
     def predict(self, data: dict, use_multiprocessing: bool = True) -> np.array:
         votes = dict()
 
+        # Gating Mechanism
+        gating_mask: np.ndarray = self.gate_function_instance.predict(data)
+        assert gating_mask.shape[1] == len(self.components)
+        assert gating_mask.shape[0] == data["Y"].shape[0]
+
         if use_multiprocessing:
             # Determine number of processes based on available CPU cores
             n_processes = min(cpu_count(), len(self.components))
 
             with Pool(n_processes) as pool:
-                results = pool.starmap(self._component_predict, [(component, data) for component in self.components])
+                results = pool.starmap(self._component_predict, [
+                    (component, data) for i, component in enumerate(self.components)
+                ])
 
                 # Aggregate results from each process
-                for result in results:
+                for i, result in enumerate(results):
                     for key, score in result.items():
+
+                        # Apply gating mask
+                        masked_score = score * gating_mask[:, i]
+
                         if key not in votes:
-                            votes[key] = score
+                            votes[key] = masked_score
                         else:
-                            votes[key] += score
+                            votes[key] += masked_score
         else:
-            for component in tqdm(self.components):
+            for i, component in tqdm(enumerate(self.components)):
                 component_votes = self._component_predict(component, data)
                 for key, score in component_votes.items():
+                        
+                    # Apply gating mask
+                    masked_score = score * gating_mask[:, i]
+
                     if key not in votes:
-                        votes[key] = score
+                        votes[key] = masked_score
                     else:
-                        votes[key] += score
+                        votes[key] += masked_score
 
         return {k: v.argmax(axis=1) for k, v in votes.items()}
 
