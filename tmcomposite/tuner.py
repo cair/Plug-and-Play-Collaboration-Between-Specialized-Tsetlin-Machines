@@ -1,6 +1,7 @@
 import json
 import time
 import optuna
+from optuna.storages import JournalStorage, JournalFileStorage
 from joblib import Parallel, delayed
 from tmu.models.classification.vanilla_classifier import TMClassifier
 from tmcomposite.components.adaptive_thresholding import AdaptiveThresholdingComponent
@@ -115,13 +116,13 @@ class TMCompositeTuner:
         raise RuntimeError("Max retries reached for database access")
 
     def tune(self, n_trials: int = 100):
-        storage_path = 'sqlite:///optuna_tuning.db'
+        storage = JournalStorage(JournalFileStorage("optuna-journal.log"))
         with Parallel(n_jobs=self.n_jobs) as parallel:
             if self.n_jobs == 1:
-                study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(), storage=storage_path, load_if_exists=True)
+                study = optuna.create_study(direction='maximize', pruner=optuna.pruners.MedianPruner(), storage=storage, load_if_exists=True)
                 self.retry_optimize(study, self.objective, n_trials, [self.gradual_saving_callback])
             else:
-                study = optuna.create_study(study_name=self.study_name, direction='maximize', storage=storage_path, load_if_exists=True, pruner=optuna.pruners.MedianPruner())
+                study = optuna.create_study(study_name=self.study_name, direction='maximize', storage=storage, load_if_exists=True, pruner=optuna.pruners.MedianPruner())
                 parallel(
                     delayed(self.retry_optimize)(study, self.objective, n_trials // self.n_jobs, [self.gradual_saving_callback])
                     for i in range(self.n_jobs)
