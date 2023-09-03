@@ -25,11 +25,3 @@ class ColorThermometerComponent(TMComponent):
             X=X,
             Y=Y,
         )
-
-    def fit(self, data: dict) -> None:
-        X, Y = data["X"], data["Y"]
-        self.model_instance.fit(X, Y)
-
-    def predict(self, data: dict) -> Tuple[np.array, np.array]:
-        X_test = data["X"]
-        return self.model_instance.predict(X_test, return_class_sums=True)

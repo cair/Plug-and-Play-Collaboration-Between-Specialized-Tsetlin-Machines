@@ -8,7 +8,7 @@ from multiprocessing import Pool, Queue, Manager
 import numpy as np
 from tqdm import tqdm
 
-from tmcomposite.callbacks.base import TMCompositeCallbackProxy
+from tmcomposite.callbacks.base import TMCompositeCallbackProxy, TMCompositeCallback
 from tmcomposite.components.base import TMComponent
 from tmcomposite.gating.base import BaseGate
 from tmcomposite.gating.linear_gate import LinearGate
@@ -17,7 +17,7 @@ from tmcomposite.gating.linear_gate import LinearGate
 class TMComposite:
 
     def __init__(
-            self, 
+            self,
             components: Optional[list[TMComponent]] = None,
             gate_function: Optional[Type[BaseGate]] = None,
             gate_function_params: Optional[dict] = None,
@@ -62,7 +62,7 @@ class TMComposite:
             proxy_callback.on_train_composite_end(composite=component)
         return component
 
-    def fit(self, data: dict, callbacks: Optional[list] = None) -> None:
+    def fit(self, data: dict, callbacks: Optional[list[TMCompositeCallback]] = None) -> None:
 
         if self.use_multiprocessing:
             with Manager() as manager:
@@ -95,18 +95,20 @@ class TMComposite:
             for idx, (pbar, component) in enumerate(zip(pbars, self.components)):
                 pbar.set_description(f"Component {idx}: {type(component).__name__}")
 
-            [callback.on_train_begin(composite=self) for callback in callbacks]
+            [callback.on_train_composite_begin(composite=self) for callback in callbacks]
             epoch = 0
             while any(epochs_left):
                 for idx, component in enumerate(self.components):
                     if epochs_left[idx] > 0:
+                        [callback.on_epoch_component_begin(component=component, epoch=epoch) for callback in callbacks]
                         component.fit(data=data_preprocessed[idx])
+                        [callback.on_epoch_component_end(component=component, epoch=epoch) for callback in callbacks]
                         pbars[idx].update(1)
                         epochs_left[idx] -= 1
-                [callback.on_epoch_end(composite=self, epoch=epoch) for callback in callbacks]
+
                 epoch += 1
 
-            [callback.on_train_enc(composite=self) for callback in callbacks]
+            [callback.on_train_composite_end(composite=self) for callback in callbacks]
 
     def _component_predict(self, component, data):
         data_preprocessed = component.preprocess(data)
@@ -156,7 +158,7 @@ class TMComposite:
             for i, component in tqdm(enumerate(self.components)):
                 component_votes = self._component_predict(component, data)
                 for key, score in component_votes.items():
-                        
+
                     # Apply gating mask
                     masked_score = score * gating_mask[:, i]
 

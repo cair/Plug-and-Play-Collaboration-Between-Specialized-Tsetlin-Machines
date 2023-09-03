@@ -10,7 +10,7 @@ import pathlib
 
 
 if __name__ == "__main__":
-
+    platform = "GPU"
     epochs = 100
     checkpoint_path = pathlib.Path("checkpoints")
     checkpoint_path.mkdir(exist_ok=True)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
                 T=500,
                 s=10.0,
                 max_included_literals=32,
-                platform="CPU",
+                platform=platform,
                 weighted_clauses=True,
                 patch_dim=(10, 10),
             ), epochs=epochs),
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                 T=1500,
                 s=2.5,
                 max_included_literals=32,
-                platform="CPU",
+                platform=platform,
                 weighted_clauses=True,
                 patch_dim=(3, 3),
             ), resolution=8, epochs=epochs),
@@ -83,7 +83,7 @@ if __name__ == "__main__":
                 T=1500,
                 s=2.5,
                 max_included_literals=32,
-                platform="CPU",
+                platform=platform,
                 weighted_clauses=True,
                 patch_dim=(4, 4),
             ), resolution=8, epochs=epochs),
@@ -93,11 +93,11 @@ if __name__ == "__main__":
                 T=50,
                 s=10.0,
                 max_included_literals=32,
-                platform="CPU",
+                platform=platform,
                 weighted_clauses=False
             ), epochs=epochs)
         ],
-        use_multiprocessing=True
+        use_multiprocessing=False
     )
 
     # Train the composite model

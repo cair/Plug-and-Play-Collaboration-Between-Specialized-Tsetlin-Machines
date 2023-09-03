@@ -1,7 +1,7 @@
 import abc
-import pickle
+import numpy as np
 from pathlib import Path
-from typing import Union
+from typing import Union, Tuple
 
 
 class TMComponent(abc.ABC):
@@ -16,7 +16,7 @@ class TMComponent(abc.ABC):
             print(f"Warning: unused keyword arguments: {kwargs}")
 
         self.model_instance = self.model_cls(
-            **self.model_config.dict()
+            **self.model_config.model_dump()
         )
 
     def model(self):
@@ -33,11 +33,12 @@ class TMComponent(abc.ABC):
         return data
 
     def fit(self, data: dict) -> None:
-        pass
+        X, Y = data["X"], data["Y"]
+        self.model_instance.fit(X, Y)
 
-    @abc.abstractmethod
-    def predict(self, data: dict):
-        pass
+    def predict(self, data: dict) -> Tuple[np.array, np.array]:
+        X_test = data["X"]
+        return self.model_instance.predict(X_test, return_class_sums=True)
 
     def save(self, path: Union[Path, str], format="pkl") -> None:
         path = Path(path) if isinstance(path, str) else path
@@ -47,7 +48,6 @@ class TMComponent(abc.ABC):
             with open(path, "wb") as f:
                 pickle.dump(self, f)
 
-
     def __str__(self):
-        params = '-'.join([f"{k}={v}" for k, v in self.model_config.dict().items()])
+        params = '-'.join([f"{k}={v}" for k, v in self.model_config.model_dump().items()])
         return f"{type(self).__name__}-{self.model_cls.__name__}-{params})"

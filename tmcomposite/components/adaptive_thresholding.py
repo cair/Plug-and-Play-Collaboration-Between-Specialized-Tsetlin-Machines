@@ -25,11 +25,3 @@ class AdaptiveThresholdingComponent(TMComponent):
             X=X,
             Y=Y,
         )
-
-    def fit(self, data: dict) -> None:
-        X_train, Y_train = data["X"], data["Y"]
-        self.model_instance.fit(X_train, Y_train)
-
-    def predict(self, data: dict) -> Tuple[np.array, np.array]:
-        X_test = data["X"]
-        return self.model_instance.predict(X_test, return_class_sums=True)
