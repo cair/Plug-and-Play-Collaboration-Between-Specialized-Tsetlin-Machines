@@ -33,30 +33,38 @@ class TMComposite:
     def _mp_fit(args: tuple) -> None:
         idx, component, data_preprocessed, proxy_callback = args
 
-        proxy_callback.on_train_composite_begin(composite=component)
+        if proxy_callback:
+            proxy_callback.on_train_composite_begin(composite=component)
 
         epochs = component.epochs
         pbar = tqdm(total=epochs, position=idx)
         pbar.set_description(f"Component {idx}: {type(component).__name__}")
         for epoch in range(epochs):
-            proxy_callback.on_epoch_component_begin(component=component, epoch=epoch)
+            if proxy_callback:
+                proxy_callback.on_epoch_component_begin(component=component, epoch=epoch)
             component.fit(data=data_preprocessed)
             pbar.update(1)
-            proxy_callback.on_epoch_component_end(component=component, epoch=epoch)
+            if proxy_callback:
+                proxy_callback.on_epoch_component_end(component=component, epoch=epoch)
 
-        proxy_callback.on_train_composite_end(composite=component)
+        if proxy_callback:
+            proxy_callback.on_train_composite_end(composite=component)
         return component
 
     def fit(self, data: dict, callbacks: Optional[list] = None) -> None:
 
         if self.use_multiprocessing:
             with Manager() as manager:
-                callback_queue = manager.Queue()  # Create a queue with the manager
-                callback_proxy = TMCompositeCallbackProxy(callback_queue)
 
-                # Start listener thread
-                listener_thread = threading.Thread(target=self._listener, args=(callback_queue, callbacks))
-                listener_thread.start()
+                if callbacks:
+                    callback_queue = manager.Queue()  # Create a queue with the manager
+                    callback_proxy = TMCompositeCallbackProxy(callback_queue)
+
+                    # Start listener thread
+                    listener_thread = threading.Thread(target=self._listener, args=(callback_queue, callbacks))
+                    listener_thread.start()
+                else:
+                    callback_proxy = None
 
                 with Pool() as pool:
                     data_preprocessed = [component.preprocess(data) for component in self.components]
