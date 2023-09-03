@@ -59,7 +59,7 @@ if __name__ == "__main__":
     composite_model = TMComposite(
         components=[
             AdaptiveThresholdingComponent(TMClassifier, TMClassifierConfig(
-                num_clauses=2000,
+                number_of_clauses=2000,
                 T=500,
                 s=10.0,
                 max_included_literals=32,
@@ -69,7 +69,7 @@ if __name__ == "__main__":
             ), epochs=epochs),
 
             ColorThermometerComponent(TMClassifier, TMClassifierConfig(
-                num_clauses=2000,
+                number_of_clauses=2000,
                 T=1500,
                 s=2.5,
                 max_included_literals=32,
@@ -79,7 +79,7 @@ if __name__ == "__main__":
             ), resolution=8, epochs=epochs),
 
             ColorThermometerComponent(TMClassifier, TMClassifierConfig(
-                num_clauses=2000,
+                number_of_clauses=2000,
                 T=1500,
                 s=2.5,
                 max_included_literals=32,
@@ -89,7 +89,7 @@ if __name__ == "__main__":
             ), resolution=8, epochs=epochs),
 
             HistogramOfGradientsComponent(TMClassifier, TMClassifierConfig(
-                num_clauses=2000,
+                number_of_clauses=2000,
                 T=50,
                 s=10.0,
                 max_included_literals=32,
