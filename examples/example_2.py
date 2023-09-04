@@ -1,5 +1,5 @@
 from tmcomposite.tuner import TMCompositeTuner
-from keras.datasets import cifar10
+from tmu.data.cifar10 import CIFAR10
 import numpy as np
 
 
@@ -19,7 +19,11 @@ def create_subset(X, Y, samples_per_class):
 
 
 if __name__ == "__main__":
-    (X_train_org, Y_train), (X_test_org, Y_test) = cifar10.load_data()
+    data = CIFAR10().get()
+    X_train_org = data["x_train"]
+    Y_train = data["y_train"]
+    X_test_org = data["x_test"]
+    Y_test = data["y_test"]
 
     """data_train = dict(
         X=X_train_org,

@@ -4,7 +4,7 @@ from tmcomposite.components.adaptive_thresholding import AdaptiveThresholdingCom
 from tmcomposite.components.color_thermometer_scoring import ColorThermometerComponent
 from tmcomposite.components.histogram_of_gradients import HistogramOfGradientsComponent
 from tmcomposite.config import TMClassifierConfig
-from keras.datasets import cifar10
+from tmu.data.cifar10 import CIFAR10
 from tmu.models.classification.vanilla_classifier import TMClassifier
 import pathlib
 
@@ -21,9 +21,11 @@ if __name__ == "__main__":
     component_path = checkpoint_path / "components"
     component_path.mkdir(exist_ok=True)
 
-    (X_train_org, Y_train), (X_test_org, Y_test) = cifar10.load_data()
-    Y_test = Y_test.reshape(Y_test.shape[0])
-    Y_train = Y_train.reshape(Y_train.shape[0])
+    data = CIFAR10().get()
+    X_train_org = data["x_train"]
+    Y_train = data["y_train"]
+    X_test_org = data["x_test"]
+    Y_test = data["y_test"]
 
     data_train = dict(
         X=X_train_org,
